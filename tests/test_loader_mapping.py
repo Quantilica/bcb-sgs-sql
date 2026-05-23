@@ -1,7 +1,6 @@
 import datetime as dt
+import json
 from decimal import Decimal
-
-import polars as pl
 
 from bcb_sgs_sql import loader
 
@@ -54,24 +53,16 @@ def test_basic_to_metadata_row_field_mapping():
     assert row["full_provider_data"] == [{"a": 1}]
 
 
-def test_read_parquet_rows(tmp_path):
-    df = pl.DataFrame(
-        {
-            "series_id": [1, 1],
-            "date": [dt.date(2020, 1, 1), dt.date(2020, 2, 1)],
-            "value": [1.5, 2.5],
-            "date_end": [None, None],
-        },
-        schema={
-            "series_id": pl.Int64,
-            "date": pl.Date,
-            "value": pl.Float64,
-            "date_end": pl.Date,
-        },
-    )
-    p = tmp_path / "s.parquet"
-    df.write_parquet(p)
-    rows = loader.read_parquet_rows(p)
+def test_read_json_rows(tmp_path):
+    records = [
+        {"series_id": 1, "date": "2020-01-01", "value": "1.5",
+         "date_end": None},
+        {"series_id": 1, "date": "2020-02-01", "value": "2.5",
+         "date_end": None},
+    ]
+    p = tmp_path / "series.json"
+    p.write_text(json.dumps(records))
+    rows = loader.read_json_rows(p)
     assert len(rows) == 2
     assert rows[0][0] == 1
     assert rows[0][1] == dt.date(2020, 1, 1)

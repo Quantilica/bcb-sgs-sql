@@ -23,7 +23,7 @@ análoga ao `sidra-sql` para o IBGE/SIDRA.
   bcb-sgs-sql run-path ./meu/pipeline
   ```
 
-- **Load-from-files** (sem rede): carrega Parquet/JSON já baixados.
+- **Load-from-files** (sem rede): carrega JSON já baixados.
 
   ```bash
   bcb-sgs-sql load ./data/bcb-sgs --kind auto

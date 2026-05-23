@@ -564,12 +564,12 @@ def transform_pipeline(
 @app.command("load")
 def load_files(
     path: Path = typer.Argument(
-        ..., help="Arquivo ou diretório com Parquet/JSON/metadados"
+        ..., help="Arquivo ou diretório com JSON/metadados"
     ),
     kind: str = typer.Option(
         "auto",
         "--kind",
-        help="parquet | json | metadata | auto (detecta)",
+        help="json | metadata | auto (detecta)",
     ),
     force_load: bool = typer.Option(
         False, "--force-load", help="Recarregar arquivos já registrados"

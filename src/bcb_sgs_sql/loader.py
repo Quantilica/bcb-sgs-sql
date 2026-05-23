@@ -1,8 +1,7 @@
 """Load-from-files path (Via B): populate PostgreSQL from artifacts on disk.
 
-This path never touches the BCB. It reads Parquet observation files
-(matching ``SGS_CONTRACT``), JSON observation files, and metadata JSON
-files (the ``{id:06d}_{basic,full}.json`` layout written by
+This path never touches the BCB. It reads JSON observation files and
+metadata JSON files (the ``{id:06d}_{basic,full}.json`` layout written by
 ``bcb-sgs-fetcher`` or by this package's :mod:`~bcb_sgs_sql.storage`), and
 loads them through the same soft-versioned ETL used by the fetch path.
 
@@ -16,7 +15,6 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import orjson
-import polars as pl
 
 from . import database
 from .config import Config
@@ -117,33 +115,6 @@ def basic_to_metadata_row(
 # ---------------------------------------------------------------------------
 
 
-def read_parquet_rows(path: Path) -> list[Row]:
-    """Read observation tuples from a Parquet file matching SGS_CONTRACT."""
-    df = pl.read_parquet(path)
-    cols = set(df.columns)
-    required = {"series_id", "date", "value"}
-    if not required.issubset(cols):
-        raise ValueError(
-            f"{path}: Parquet não segue SGS_CONTRACT "
-            f"(colunas: {sorted(cols)})"
-        )
-    has_end = "date_end" in cols
-    rows: list[Row] = []
-    select = ["series_id", "date", "value"] + (
-        ["date_end"] if has_end else []
-    )
-    for rec in df.select(select).iter_rows(named=True):
-        rows.append(
-            (
-                int(rec["series_id"]),
-                rec["date"],
-                rec.get("date_end") if has_end else None,
-                _parse_value(rec["value"]),
-            )
-        )
-    return rows
-
-
 def read_json_rows(path: Path) -> list[Row]:
     """Read observation tuples from a JSON list-of-records file."""
     with path.open("rb") as f:
@@ -187,7 +158,7 @@ def load_observations(
     files: list[Path],
     force_load: bool = False,
 ) -> tuple[int, int, int]:
-    """Load observation files (Parquet/JSON) with file-level idempotency."""
+    """Load JSON observation files with file-level idempotency."""
     engine = database.get_engine(config)
     names = {f.name for f in files}
     skip = (
@@ -202,9 +173,7 @@ def load_observations(
         if f.name in skip:
             logger.info("Skipping already-loaded file %s", f.name)
             continue
-        if f.suffix == ".parquet":
-            all_rows.extend(read_parquet_rows(f))
-        elif f.suffix == ".json":
+        if f.suffix == ".json":
             all_rows.extend(read_json_rows(f))
         else:
             logger.warning("Ignoring unsupported file %s", f)
@@ -217,11 +186,9 @@ def load_observations(
 
 
 def _classify(path: Path) -> str:
-    """Sniff whether a directory holds metadata, parquet, or json values."""
+    """Sniff whether a directory holds metadata or json observation files."""
     if list(path.glob("*_basic.json")):
         return "metadata"
-    if list(path.rglob("*.parquet")):
-        return "parquet"
     return "json"
 
 
@@ -233,7 +200,7 @@ def load(
 ) -> None:
     """Entry point for the ``load`` CLI command.
 
-    ``kind``: ``parquet``, ``json``, ``metadata`` or ``auto`` (sniff).
+    ``kind``: ``json``, ``metadata`` or ``auto`` (sniff).
     """
     path = Path(path)
     if not path.exists():
@@ -251,10 +218,6 @@ def load(
 
     if kind == "metadata":
         load_metadata_dir(config, path)
-    elif kind == "parquet":
-        load_observations(
-            config, sorted(path.rglob("*.parquet")), force_load=force_load
-        )
     elif kind == "json":
         files = [
             f
