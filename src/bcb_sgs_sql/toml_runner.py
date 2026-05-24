@@ -26,12 +26,23 @@ Each ``[[series]]`` entry is a selector. Either ``ids`` (always valid) or
 import dataclasses
 import logging
 import tomllib
+from collections.abc import Callable
 from pathlib import Path
 
 import sqlalchemy as sa
 from bcb_sgs_fetcher import storage
 from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 from rich.table import Table
+from rich.text import Text
 
 from . import database, sgs
 from .config import Config
@@ -57,6 +68,54 @@ def _freq_acronym(frequency: str | None) -> str | None:
     if not frequency:
         return None
     return _FREQ_ACRONYM.get(frequency.strip().lower())
+
+
+class _MainOnlyTimeElapsedColumn(TimeElapsedColumn):
+    def render(self, task):
+        if not task.fields.get("main"):
+            return Text("")
+        return super().render(task)
+
+
+class _MainOnlyTimeRemainingColumn(TimeRemainingColumn):
+    def render(self, task):
+        if not task.fields.get("main"):
+            return Text("")
+        return super().render(task)
+
+
+def _make_progress(console: Console | None) -> Progress:
+    return Progress(
+        SpinnerColumn(finished_text="[green]✓[/green]"),
+        TextColumn(
+            "[progress.description]{task.description}", table_column=None
+        ),
+        BarColumn(bar_width=28),
+        TextColumn(
+            "[progress.percentage]{task.percentage:>3.0f}%", style="grey70"
+        ),
+        _MainOnlyTimeElapsedColumn(),
+        _MainOnlyTimeRemainingColumn(),
+        console=console,
+        transient=False,
+        disable=console is None,
+    )
+
+
+def _make_download_progress(console: Console | None) -> Progress:
+    return Progress(
+        SpinnerColumn(finished_text="[green]✓[/green]"),
+        TextColumn(
+            "[progress.description]{task.description}", table_column=None
+        ),
+        BarColumn(bar_width=28),
+        MofNCompleteColumn(),
+        _MainOnlyTimeElapsedColumn(),
+        _MainOnlyTimeRemainingColumn(),
+        console=console,
+        transient=False,
+        disable=console is None,
+    )
 
 
 class TomlScript:
@@ -95,6 +154,8 @@ class TomlScript:
         engine: sa.engine.Engine,
         fetcher: sgs.Fetcher,
         series_ids: list[int],
+        *,
+        on_done: Callable[[], None] | None = None,
     ) -> dict[int, str | None]:
         """Fetch + persist metadata; return a series_id → freq-acronym map."""
         rows: list[dict] = []
@@ -117,6 +178,8 @@ class TomlScript:
                     theme_id=theme_id,
                 )
             )
+            if on_done is not None:
+                on_done()
         database.save_series_metadata(engine, rows)
         return freq_by_id
 
@@ -153,7 +216,22 @@ class TomlScript:
                 self.console.print(info)
                 self.console.print()
 
-            freq_by_id = self.load_metadata(engine, fetcher, series_ids)
+            with _make_progress(self.console) as progress:
+                n = len(series_ids)
+                meta_task = progress.add_task(
+                    f"Metadados ({n} série{'s' if n != 1 else ''})",
+                    total=n,
+                    main=True,
+                )
+                freq_by_id = self.load_metadata(
+                    engine,
+                    fetcher,
+                    series_ids,
+                    on_done=lambda: progress.advance(meta_task),
+                )
+                progress.update(
+                    meta_task, description=f"Metadados ({n}) ✓"
+                )
 
             rows: list = []
             to_download: list[int] = []
@@ -170,16 +248,35 @@ class TomlScript:
                 else:
                     to_download.append(sid)
 
-            points = fetcher.download_series(
-                to_download, frequency_by_id=freq_by_id
-            )
+            with _make_download_progress(self.console) as progress:
+                dl_task = progress.add_task(
+                    "Download", total=len(to_download), main=True
+                )
+                points = fetcher.download_series(
+                    to_download,
+                    frequency_by_id=freq_by_id,
+                    on_done=lambda: progress.advance(dl_task),
+                )
+                progress.update(
+                    dl_task, description="Download concluído ✓"
+                )
 
         rows.extend(
             (p.series_id, p.date, p.date_end, p.value) for p in points
         )
-        n_staging, n_inserted, n_deactivated = database.load_series_data(
-            engine, rows
-        )
+        with _make_progress(self.console) as progress:
+            db_task = progress.add_task(
+                "Carregando no banco de dados", total=None, main=True
+            )
+            n_staging, n_inserted, n_deactivated = (
+                database.load_series_data(engine, rows)
+            )
+            progress.update(
+                db_task,
+                total=1,
+                completed=1,
+                description="Carregamento concluído ✓",
+            )
         if self.console is not None:
             self.console.print(
                 f"  [green]✓[/green] {n_inserted} observações inseridas, "
