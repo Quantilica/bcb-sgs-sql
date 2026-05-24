@@ -29,13 +29,13 @@ import tomllib
 from pathlib import Path
 
 import sqlalchemy as sa
+from bcb_sgs_fetcher import storage
 from rich.console import Console
 from rich.table import Table
 
 from . import database, sgs
 from .config import Config
-from .loader import basic_to_metadata_row
-from .storage import Storage
+from .loader import basic_to_metadata_row, read_json_rows
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,8 @@ class TomlScript:
         self.force_metadata = force_metadata
         self.force_load = force_load
         self.console = console
-        self.storage = Storage.default(config)
+        self.data_dir = config.data_dir
+        self.data_dir.mkdir(parents=True, exist_ok=True)
 
     def get_selectors(self) -> list[dict]:
         with open(self.toml_path, "rb") as f:
@@ -121,7 +122,7 @@ class TomlScript:
 
     def run(self):
         engine = database.get_engine(self.config)
-        database.create_all(engine)
+        database.create_all(engine, self.config.db_schema)
         try:
             self._run(engine)
         except KeyboardInterrupt:
@@ -132,7 +133,7 @@ class TomlScript:
     def _run(self, engine: sa.engine.Engine):
         selectors = self.get_selectors()
         with sgs.Fetcher(
-            self.storage, max_workers=self.max_workers
+            self.data_dir, max_workers=self.max_workers
         ) as fetcher:
             series_ids = fetcher.plan_series(selectors, engine=engine)
 
@@ -153,13 +154,29 @@ class TomlScript:
                 self.console.print()
 
             freq_by_id = self.load_metadata(engine, fetcher, series_ids)
+
+            rows: list = []
+            to_download: list[int] = []
+            n_cache = 0
+            for sid in series_ids:
+                path = (
+                    None
+                    if self.force_load
+                    else storage.latest_series_file(self.data_dir, sid)
+                )
+                if path is not None:
+                    rows.extend(read_json_rows(path))
+                    n_cache += 1
+                else:
+                    to_download.append(sid)
+
             points = fetcher.download_series(
-                series_ids, frequency_by_id=freq_by_id
+                to_download, frequency_by_id=freq_by_id
             )
 
-        rows = [
+        rows.extend(
             (p.series_id, p.date, p.date_end, p.value) for p in points
-        ]
+        )
         n_staging, n_inserted, n_deactivated = database.load_series_data(
             engine, rows
         )
@@ -167,5 +184,6 @@ class TomlScript:
             self.console.print(
                 f"  [green]✓[/green] {n_inserted} observações inseridas, "
                 f"{n_deactivated} desativadas "
-                f"({len(series_ids)} séries)"
+                f"({len(series_ids)} séries: {n_cache} do cache, "
+                f"{len(to_download)} baixadas)"
             )

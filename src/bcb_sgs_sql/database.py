@@ -53,8 +53,10 @@ def get_engine(config: Config) -> sa.engine.Engine:
     )
 
 
-def create_all(engine: sa.engine.Engine) -> None:
+def create_all(engine: sa.engine.Engine, schema: str) -> None:
     """Create the schema (if missing) and all tables."""
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f'CREATE SCHEMA IF NOT EXISTS "{schema}"')
     models.Base.metadata.create_all(engine)
 
 

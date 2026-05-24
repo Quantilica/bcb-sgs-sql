@@ -17,6 +17,9 @@ análoga ao `sidra-sql` para o IBGE/SIDRA.
 ## Duas formas de carregar
 
 - **Fetch-and-load** (envolve o `bcb-sgs-fetcher`): busca da API e carrega.
+  Reaproveita do disco os snapshots/metadados já baixados pelo
+  `bcb-sgs-fetcher` (mesmo módulo `storage`) como cache; `--force-load` e
+  `--force-metadata` ignoram o cache.
 
   ```bash
   bcb-sgs-sql run std precos        # roda um pipeline do plugin padrão

@@ -2,8 +2,8 @@
 
 This path never touches the BCB. It reads JSON observation files and
 metadata JSON files (the ``{id:06d}_{basic,full}.json`` layout written by
-``bcb-sgs-fetcher`` or by this package's :mod:`~bcb_sgs_sql.storage`), and
-loads them through the same soft-versioned ETL used by the fetch path.
+``bcb-sgs-fetcher``) and loads them through the same soft-versioned ETL
+used by the fetch path.
 
 Also hosts the small dataclass/record ↔ row mapping helpers shared with
 :mod:`~bcb_sgs_sql.sgs`.

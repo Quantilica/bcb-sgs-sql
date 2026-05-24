@@ -4,7 +4,7 @@
 lazily, a :class:`ScraperClient` (metadata/theme HTML scraping). It plans
 which series to fetch from ``fetch.toml`` selectors, downloads observations
 concurrently with retry/backoff, and caches results to disk via
-:class:`~bcb_sgs_sql.storage.Storage` so re-runs hit the cache.
+``bcb_sgs_fetcher.storage`` so re-runs hit the cache.
 
 The daily-retroactive walk for high-frequency series is *not*
 reimplemented here — it lives in ``bcb_sgs_fetcher.get_daily_series`` and is
@@ -16,6 +16,7 @@ import logging
 import time
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from types import TracebackType
 
 import sqlalchemy as sa
@@ -26,11 +27,11 @@ from bcb_sgs_fetcher import (
     SgsDataClient,
     parse_metadata_basic,
     parse_metadata_full,
+    storage,
 )
 from bcb_sgs_fetcher.constants import BASIC, FULL
 
 from . import models
-from .storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,11 @@ class Fetcher:
 
     def __init__(
         self,
-        storage: Storage,
+        data_dir: Path,
         max_workers: int = 4,
         sleep: float = 0.0,
     ) -> None:
-        self.storage = storage
+        self.data_dir = data_dir
         self.max_workers = max_workers
         self.sleep = sleep
         self._data_client: SgsDataClient | None = None
@@ -127,29 +128,53 @@ class Fetcher:
 
     # -- metadata --------------------------------------------------------
 
+    @staticmethod
+    def _build_metadata(
+        basic_d: dict, full_d: dict | None
+    ) -> tuple[SeriesMetadataBasic, SeriesMetadataFull]:
+        """Rebuild the metadata dataclasses from cached dicts."""
+        basic = SeriesMetadataBasic(**basic_d)
+        full = (
+            SeriesMetadataFull(**full_d)
+            if full_d is not None
+            else SeriesMetadataFull()
+        )
+        return basic, full
+
     def fetch_metadata(
         self, series_id: int, *, force: bool = False
     ) -> tuple[SeriesMetadataBasic, SeriesMetadataFull]:
-        """Fetch (and cache) basic + full metadata for a series."""
-        if not force and self.storage.has_basic_metadata(series_id):
-            basic_d = self.storage.read_basic_metadata(series_id)
-            full_d = self.storage.read_full_metadata(series_id)
-            basic = SeriesMetadataBasic(**basic_d)
-            full = (
-                SeriesMetadataFull(**full_d)
-                if full_d is not None
-                else SeriesMetadataFull()
+        """Fetch (and cache) basic + full metadata for a series.
+
+        Cache resolution (skipped with ``force``): this package's split
+        ``{id}_basic.json``/``_full.json`` first, then a ``bcb-sgs-fetcher``
+        combined ``{id}.json`` (``catalogo sync``), then HTML scraping.
+        """
+        if not force:
+            if storage.has_basic_metadata(self.data_dir, series_id):
+                return self._build_metadata(
+                    storage.read_basic_metadata(self.data_dir, series_id),
+                    storage.read_full_metadata(self.data_dir, series_id),
+                )
+            combined = storage.read_combined_metadata(
+                self.data_dir, series_id
             )
-            return basic, full
+            if combined is not None:
+                return self._build_metadata(
+                    combined[BASIC], combined.get(FULL)
+                )
 
         scraper = self._ensure_scraper()
         html = scraper.request_metadata_html(series_id)
         basic = parse_metadata_basic(html[BASIC])
         full = parse_metadata_full(html[FULL])
-        self.storage.write_metadata(
+        storage.write_metadata(
+            self.data_dir,
             series_id,
             basic=dataclasses.asdict(basic),
             full=dataclasses.asdict(full),
+            html_basic=html[BASIC],
+            html_full=html[FULL],
         )
         return basic, full
 
@@ -202,10 +227,10 @@ class Fetcher:
             if points:
                 from .loader import point_to_record
 
-                self.storage.write_series_data(
-                    [point_to_record(p) for p in points],
+                storage.write_series_data(
+                    self.data_dir,
                     series_id,
-                    stamp=time.strftime("%Y%m%dT%H%M%S"),
+                    [point_to_record(p) for p in points],
                 )
             if self.sleep:
                 time.sleep(self.sleep)

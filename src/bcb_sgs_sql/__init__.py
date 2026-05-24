@@ -1,14 +1,14 @@
 import logging
 from importlib.metadata import PackageNotFoundError, version
 
-from . import config, database, loader, sgs, storage
+from . import config, database, loader, sgs
 
 try:
     __version__ = version("bcb-sgs-sql")
 except PackageNotFoundError:
     __version__ = "0.0.0"
 
-__all__ = ["config", "database", "loader", "sgs", "storage"]
+__all__ = ["config", "database", "loader", "sgs"]
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 

@@ -1,12 +1,11 @@
 import pytest
 
 from bcb_sgs_sql.sgs import Fetcher
-from bcb_sgs_sql.storage import Storage
 from bcb_sgs_sql.toml_runner import _freq_acronym
 
 
 def _fetcher(tmp_path):
-    return Fetcher(Storage(tmp_path))
+    return Fetcher(tmp_path)
 
 
 def test_plan_series_ids(tmp_path):
