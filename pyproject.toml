@@ -59,7 +59,7 @@ packages = ["src/bcb_sgs_sql"]
 allow-direct-references = true
 
 [tool.ruff]
-line-length = 79
+line-length = 88
 target-version = "py312"
 
 [tool.ruff.lint]
