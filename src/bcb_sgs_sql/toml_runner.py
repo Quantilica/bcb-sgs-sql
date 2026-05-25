@@ -24,6 +24,7 @@ Each ``[[series]]`` entry is a selector. Either ``ids`` (always valid) or
 """
 
 import dataclasses
+import datetime as dt
 import logging
 import tomllib
 from collections.abc import Callable
@@ -46,7 +47,7 @@ from rich.text import Text
 
 from . import database, sgs
 from .config import Config
-from .loader import basic_to_metadata_row, read_json_rows
+from .loader import basic_to_metadata_row, load_observation_files
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,7 @@ class TomlScript:
         force_metadata: bool = False,
         force_load: bool = False,
         console: Console | None = None,
+        cache_ttl_hours: float | None = None,
     ):
         self.config = config
         self.toml_path = toml_path
@@ -136,6 +138,11 @@ class TomlScript:
         self.force_metadata = force_metadata
         self.force_load = force_load
         self.console = console
+        self.cache_ttl_hours = (
+            cache_ttl_hours
+            if cache_ttl_hours is not None
+            else config.cache_ttl_hours
+        )
         self.data_dir = config.data_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
@@ -233,26 +240,22 @@ class TomlScript:
                     meta_task, description=f"Metadados ({n}) ✓"
                 )
 
-            rows: list = []
-            to_download: list[int] = []
-            n_cache = 0
+            now = dt.datetime.now()
+            ttl = dt.timedelta(hours=self.cache_ttl_hours)
+            to_download = []
             for sid in series_ids:
-                path = (
-                    None
-                    if self.force_load
-                    else storage.latest_series_file(self.data_dir, sid)
-                )
-                if path is not None:
-                    rows.extend(read_json_rows(path))
-                    n_cache += 1
-                else:
+                if self.force_load:
+                    to_download.append(sid)
+                    continue
+                ts = storage.latest_series_datetime(self.data_dir, sid)
+                if ts is None or (now - ts) > ttl:
                     to_download.append(sid)
 
             with _make_download_progress(self.console) as progress:
                 dl_task = progress.add_task(
                     "Download", total=len(to_download), main=True
                 )
-                points = fetcher.download_series(
+                fetcher.download_series(
                     to_download,
                     frequency_by_id=freq_by_id,
                     on_done=lambda: progress.advance(dl_task),
@@ -261,15 +264,18 @@ class TomlScript:
                     dl_task, description="Download concluído ✓"
                 )
 
-        rows.extend(
-            (p.series_id, p.date, p.date_end, p.value) for p in points
-        )
+        files = []
+        for sid in series_ids:
+            f = storage.latest_series_file(self.data_dir, sid)
+            if f is not None:
+                files.append(f)
+
         with _make_progress(self.console) as progress:
             db_task = progress.add_task(
                 "Carregando no banco de dados", total=None, main=True
             )
-            n_staging, n_inserted, n_deactivated = (
-                database.load_series_data(engine, rows)
+            n_staging, n_inserted, n_deactivated = load_observation_files(
+                engine, files, force_load=self.force_load
             )
             progress.update(
                 db_task,
@@ -277,6 +283,7 @@ class TomlScript:
                 completed=1,
                 description="Carregamento concluído ✓",
             )
+        n_cache = len(series_ids) - len(to_download)
         if self.console is not None:
             self.console.print(
                 f"  [green]✓[/green] {n_inserted} observações inseridas, "

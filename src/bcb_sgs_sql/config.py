@@ -55,6 +55,9 @@ class Config:
         self._validate()
 
         self.data_dir = Path(self.config["storage"]["data_dir"])
+        self.cache_ttl_hours = self.config.getfloat(
+            "storage", "cache_ttl_hours", fallback=24.0
+        )
 
         self.db_user = self.config["database"]["user"]
         self.db_password = self.config["database"]["password"]

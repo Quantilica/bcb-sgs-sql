@@ -1,6 +1,6 @@
 import pytest
 
-from bcb_sgs_sql.sgs import Fetcher
+from bcb_sgs_sql.sgs import Fetcher, _records_equal
 from bcb_sgs_sql.toml_runner import _freq_acronym
 
 
@@ -46,3 +46,32 @@ def test_plan_series_requires_selector(tmp_path):
 )
 def test_freq_acronym(label, expected):
     assert _freq_acronym(label) == expected
+
+
+def test_records_equal_ignores_order():
+    a = [
+        {"series_id": 1, "date": "2020-01-01", "value": "1", "date_end": None},
+        {"series_id": 1, "date": "2020-02-01", "value": "2", "date_end": None},
+    ]
+    b = list(reversed(a))
+    assert _records_equal(a, b)
+
+
+def test_records_equal_detects_value_change():
+    a = [
+        {"series_id": 1, "date": "2020-01-01", "value": "1", "date_end": None},
+    ]
+    b = [
+        {"series_id": 1, "date": "2020-01-01", "value": "9", "date_end": None},
+    ]
+    assert not _records_equal(a, b)
+
+
+def test_records_equal_detects_added_observation():
+    a = [
+        {"series_id": 1, "date": "2020-01-01", "value": "1", "date_end": None},
+    ]
+    b = a + [
+        {"series_id": 1, "date": "2020-02-01", "value": "2", "date_end": None},
+    ]
+    assert not _records_equal(a, b)

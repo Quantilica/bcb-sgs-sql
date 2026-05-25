@@ -32,6 +32,7 @@ def run_subtree(
     force_metadata: bool = False,
     force_load: bool = False,
     console: Console | None = None,
+    cache_ttl_hours: float | None = None,
 ):
     """Run sub-pipelines under ``path`` post-order, then ``path`` itself."""
     if not path.exists() or not path.is_dir():
@@ -39,7 +40,14 @@ def run_subtree(
 
     for child in sorted(path.iterdir()):
         if _is_pipeline_dir(child):
-            run_subtree(config, child, force_metadata, force_load, console)
+            run_subtree(
+                config,
+                child,
+                force_metadata,
+                force_load,
+                console,
+                cache_ttl_hours,
+            )
 
     fetch_path = path / "fetch.toml"
     transform_path = path / "transform.toml"
@@ -56,6 +64,7 @@ def run_subtree(
             force_metadata=force_metadata,
             force_load=force_load,
             console=console,
+            cache_ttl_hours=cache_ttl_hours,
         ).run()
         if console:
             elapsed = time.monotonic() - t0

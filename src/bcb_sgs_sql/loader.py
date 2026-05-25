@@ -15,6 +15,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import orjson
+import sqlalchemy as sa
 
 from . import database
 from .config import Config
@@ -153,13 +154,18 @@ def load_metadata_dir(config: Config, path: Path) -> int:
     return n
 
 
-def load_observations(
-    config: Config,
+def load_observation_files(
+    engine: sa.engine.Engine,
     files: list[Path],
+    *,
     force_load: bool = False,
 ) -> tuple[int, int, int]:
-    """Load JSON observation files with file-level idempotency."""
-    engine = database.get_engine(config)
+    """Load JSON observation files with file-level idempotency.
+
+    Skips files already in ``arquivo_carregado``, loads the rest through the
+    soft-versioned ETL, then records the loaded files. Shared by the ``run``
+    and ``load`` paths so both skip and record the same way.
+    """
     names = {f.name for f in files}
     skip = (
         set()
@@ -183,6 +189,16 @@ def load_observations(
     result = database.load_series_data(engine, all_rows)
     database.record_loaded_files(engine, loaded_names)
     return result
+
+
+def load_observations(
+    config: Config,
+    files: list[Path],
+    force_load: bool = False,
+) -> tuple[int, int, int]:
+    """Load JSON observation files with file-level idempotency."""
+    engine = database.get_engine(config)
+    return load_observation_files(engine, files, force_load=force_load)
 
 
 def _classify(path: Path) -> str:

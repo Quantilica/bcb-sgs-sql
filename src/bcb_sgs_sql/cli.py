@@ -429,6 +429,11 @@ def run_pipeline(
     force_load: bool = typer.Option(
         False, "--force-load", help="Recarregar arquivos já registrados"
     ),
+    max_age: float | None = typer.Option(
+        None,
+        "--max-age",
+        help="TTL do cache em horas (sobrepõe storage.cache_ttl_hours).",
+    ),
 ):
     """Run pipeline(s) from an installed plugin."""
     try:
@@ -451,6 +456,7 @@ def run_pipeline(
                     force_metadata=force_metadata,
                     force_load=force_load,
                     console=console,
+                    cache_ttl_hours=max_age,
                 )
             console.print(
                 "\n[bold green]All pipelines completed successfully!"
@@ -465,6 +471,7 @@ def run_pipeline(
                 force_metadata=force_metadata,
                 force_load=force_load,
                 console=console,
+                cache_ttl_hours=max_age,
             )
             console.print(
                 "[bold green]Pipeline completed successfully![/bold green]"
@@ -489,6 +496,11 @@ def run_pipeline_path(
     force_load: bool = typer.Option(
         False, "--force-load", help="Recarregar arquivos já registrados"
     ),
+    max_age: float | None = typer.Option(
+        None,
+        "--max-age",
+        help="TTL do cache em horas (sobrepõe storage.cache_ttl_hours).",
+    ),
 ):
     """Run a pipeline directly from a directory path."""
     try:
@@ -507,6 +519,7 @@ def run_pipeline_path(
             force_metadata=force_metadata,
             force_load=force_load,
             console=console,
+            cache_ttl_hours=max_age,
         )
         console.print(
             "[bold green]Pipeline completed successfully![/bold green]"

@@ -39,6 +39,15 @@ _MAX_RETRIES = 5
 _BACKOFF_BASE = 5  # seconds: 5, 10, 20, 40, 80
 
 
+def _records_equal(old: list[dict], new: list[dict]) -> bool:
+    """Compare two observation-record lists, insensitive to ordering."""
+
+    def key(r: dict) -> tuple[str, str]:
+        return (r.get("date") or "", r.get("date_end") or "")
+
+    return sorted(old, key=key) == sorted(new, key=key)
+
+
 class Fetcher:
     """Wrap the BCB SGS clients with caching and retry."""
 
@@ -227,11 +236,23 @@ class Fetcher:
             if points:
                 from .loader import point_to_record
 
-                storage.write_series_data(
-                    self.data_dir,
-                    series_id,
-                    [point_to_record(p) for p in points],
+                new_records = [point_to_record(p) for p in points]
+                latest = storage.latest_series_file(self.data_dir, series_id)
+                old_records = (
+                    storage.read_series_data(latest)
+                    if latest is not None
+                    else None
                 )
+                if old_records is None or not _records_equal(
+                    old_records, new_records
+                ):
+                    storage.write_series_data(
+                        self.data_dir, series_id, new_records
+                    )
+                else:
+                    logger.info(
+                        "Series %s unchanged; discarding download", series_id
+                    )
             if self.sleep:
                 time.sleep(self.sleep)
             return points
