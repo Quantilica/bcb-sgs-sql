@@ -167,11 +167,7 @@ def load_observation_files(
     and ``load`` paths so both skip and record the same way.
     """
     names = {f.name for f in files}
-    skip = (
-        set()
-        if force_load
-        else database.get_loaded_filenames(engine, names)
-    )
+    skip = set() if force_load else database.get_loaded_filenames(engine, names)
 
     all_rows: list[Row] = []
     loaded_names: list[str] = []

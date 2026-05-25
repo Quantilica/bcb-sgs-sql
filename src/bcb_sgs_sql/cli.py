@@ -23,8 +23,7 @@ from bcb_sgs_sql.transform_runner import TransformRunner
 from bcb_sgs_sql.validator import PluginValidator, Severity
 
 app = typer.Typer(
-    help=f"bcb-sgs-sql CLI v{__version__} - Carrega séries do BCB SGS em "
-    "PostgreSQL"
+    help=f"bcb-sgs-sql CLI v{__version__} - Carrega séries do BCB SGS em PostgreSQL"
 )
 plugin_app = typer.Typer(help="Manage pipeline plugins")
 config_app = typer.Typer(help="Manage bcb-sgs-sql configuration")
@@ -125,12 +124,8 @@ def config_get(
 
 @config_app.command("list")
 def config_list(
-    use_global: bool = typer.Option(
-        False, "--global", help="Show only global config"
-    ),
-    local: bool = typer.Option(
-        False, "--local", help="Show only local config"
-    ),
+    use_global: bool = typer.Option(False, "--global", help="Show only global config"),
+    local: bool = typer.Option(False, "--local", help="Show only local config"),
 ):
     """List configuration values (merged view by default)."""
     if use_global:
@@ -225,15 +220,11 @@ def remove_plugin(
 
 @plugin_app.command("scaffold")
 def scaffold_plugin(
-    name: str = typer.Argument(
-        ..., help="Nome do plugin (vira o diretório raiz)"
-    ),
+    name: str = typer.Argument(..., help="Nome do plugin (vira o diretório raiz)"),
     description: str = typer.Option(
         "", "--description", "-d", help="Descrição do plugin"
     ),
-    version: str = typer.Option(
-        "1.0.0", "--version", help="Versão semântica"
-    ),
+    version: str = typer.Option("1.0.0", "--version", help="Versão semântica"),
     output_dir: Path = typer.Option(
         Path("."), "--output-dir", "-o", help="Diretório de saída"
     ),
@@ -243,15 +234,12 @@ def scaffold_plugin(
 ):
     """Cria a estrutura de um novo plugin com templates prontos."""
     try:
-        scaffolder = PluginScaffolder(
-            name, description, version, output_dir, git_init
-        )
+        scaffolder = PluginScaffolder(name, description, version, output_dir, git_init)
         plugin_dir = scaffolder.create()
         slug = scaffolder.slug
 
         console.print(
-            f"\n[bold green]Plugin '{name}' criado em "
-            f"{plugin_dir}[/bold green]\n"
+            f"\n[bold green]Plugin '{name}' criado em {plugin_dir}[/bold green]\n"
         )
         console.print("  manifest.toml")
         console.print(f"  {slug}/")
@@ -263,16 +251,12 @@ def scaffold_plugin(
             console.print("  .gitignore")
 
         console.print("\n[bold]Próximos passos:[/bold]")
+        console.print("  1. Edite [cyan]manifest.toml[/cyan] e ajuste a descrição")
         console.print(
-            "  1. Edite [cyan]manifest.toml[/cyan] e ajuste a descrição"
+            f"  2. Em [cyan]{slug}/fetch.toml[/cyan], liste os IDs das séries SGS"
         )
         console.print(
-            f"  2. Em [cyan]{slug}/fetch.toml[/cyan], liste os IDs das "
-            "séries SGS"
-        )
-        console.print(
-            f"  3. Ajuste [cyan]{slug}/{slug}.sql[/cyan] para a sua "
-            "transformação"
+            f"  3. Ajuste [cyan]{slug}/{slug}.sql[/cyan] para a sua transformação"
         )
         console.print(
             "  4. Publique o repositório e instale: "
@@ -312,8 +296,7 @@ def add_pipeline(
         adder.add()
 
         console.print(
-            f"\n[bold green]Pipeline '{pipeline_id}' adicionado"
-            "[/bold green]\n"
+            f"\n[bold green]Pipeline '{pipeline_id}' adicionado[/bold green]\n"
         )
         console.print(f"  {adder.path}/")
         console.print("    fetch.toml")
@@ -323,12 +306,9 @@ def add_pipeline(
 
         console.print("[bold]Próximos passos:[/bold]")
         console.print(
-            f"  1. Em [cyan]{adder.path}/fetch.toml[/cyan], liste os IDs "
-            "das séries SGS"
+            f"  1. Em [cyan]{adder.path}/fetch.toml[/cyan], liste os IDs das séries SGS"
         )
-        console.print(
-            f"  2. Ajuste [cyan]{adder.path}/{adder.slug}.sql[/cyan]"
-        )
+        console.print(f"  2. Ajuste [cyan]{adder.path}/{adder.slug}.sql[/cyan]")
         console.print(
             f"  3. Execute: [dim]bcb-sgs-sql run <alias> {pipeline_id}[/dim]\n"
         )
@@ -355,9 +335,7 @@ def validate_plugin(
     if alias is not None:
         target_dir = manager.registry.get_plugin_path(alias)
         if not target_dir.exists():
-            console.print(
-                f"[red]Erro:[/red] Plugin '{alias}' não encontrado."
-            )
+            console.print(f"[red]Erro:[/red] Plugin '{alias}' não encontrado.")
             raise typer.Exit(1)
     else:
         target_dir = plugin_dir
@@ -443,9 +421,7 @@ def run_pipeline(
             manifest = manager.read_manifest(alias)
             pipelines = manifest.pipelines
             if not pipelines:
-                console.print(
-                    f"[yellow]No pipelines found in '{alias}'.[/yellow]"
-                )
+                console.print(f"[yellow]No pipelines found in '{alias}'.[/yellow]")
                 return
             _print_header()
             for p in pipelines:
@@ -459,8 +435,7 @@ def run_pipeline(
                     cache_ttl_hours=max_age,
                 )
             console.print(
-                "\n[bold green]All pipelines completed successfully!"
-                "[/bold green]"
+                "\n[bold green]All pipelines completed successfully![/bold green]"
             )
         else:
             pipeline = manager.get_pipeline(alias, pipeline_id)
@@ -473,9 +448,7 @@ def run_pipeline(
                 console=console,
                 cache_ttl_hours=max_age,
             )
-            console.print(
-                "[bold green]Pipeline completed successfully![/bold green]"
-            )
+            console.print("[bold green]Pipeline completed successfully![/bold green]")
 
     except ConfigError as e:
         console.print(f"[bold yellow]{e}[/bold yellow]")
@@ -506,9 +479,7 @@ def run_pipeline_path(
     try:
         resolved = path.resolve()
         if not resolved.is_dir():
-            console.print(
-                f"[bold red]Directory not found:[/bold red] {resolved}"
-            )
+            console.print(f"[bold red]Directory not found:[/bold red] {resolved}")
             raise typer.Exit(1)
 
         config = Config()
@@ -521,9 +492,7 @@ def run_pipeline_path(
             console=console,
             cache_ttl_hours=max_age,
         )
-        console.print(
-            "[bold green]Pipeline completed successfully![/bold green]"
-        )
+        console.print("[bold green]Pipeline completed successfully![/bold green]")
     except ConfigError as e:
         console.print(f"[bold yellow]{e}[/bold yellow]")
         raise typer.Exit(1) from e
@@ -549,18 +518,12 @@ def transform_pipeline(
 
         transform_path = pipeline.path / "transform.toml"
         if not transform_path.exists():
-            console.print(
-                f"[red]No transform.toml found at {transform_path}[/red]"
-            )
+            console.print(f"[red]No transform.toml found at {transform_path}[/red]")
             raise typer.Exit(1)
 
-        console.print(
-            f"[bold blue]Transforming {pipeline_id} from {alias}[/bold blue]"
-        )
+        console.print(f"[bold blue]Transforming {pipeline_id} from {alias}[/bold blue]")
         TransformRunner(config, transform_path).run()
-        console.print(
-            "[bold green]Transform completed successfully![/bold green]"
-        )
+        console.print("[bold green]Transform completed successfully![/bold green]")
 
     except typer.Exit:
         raise
@@ -576,9 +539,7 @@ def transform_pipeline(
 
 @app.command("load")
 def load_files(
-    path: Path = typer.Argument(
-        ..., help="Arquivo ou diretório com JSON/metadados"
-    ),
+    path: Path = typer.Argument(..., help="Arquivo ou diretório com JSON/metadados"),
     kind: str = typer.Option(
         "auto",
         "--kind",

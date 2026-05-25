@@ -82,9 +82,7 @@ class PluginScaffolder:
 
     def create(self) -> Path:
         if self.plugin_dir.exists():
-            raise FileExistsError(
-                f"Directory '{self.plugin_dir}' already exists."
-            )
+            raise FileExistsError(f"Directory '{self.plugin_dir}' already exists.")
 
         self.plugin_dir.mkdir(parents=True)
         pipeline_dir = self.plugin_dir / self.slug
@@ -97,9 +95,7 @@ class PluginScaffolder:
             pipeline_dir / "transform.toml",
             _transform_toml_template(self.slug),
         )
-        self._write(
-            pipeline_dir / f"{self.slug}.sql", _transform_sql_template()
-        )
+        self._write(pipeline_dir / f"{self.slug}.sql", _transform_sql_template())
 
         if self.git_init:
             self._write(self.plugin_dir / ".gitignore", self._gitignore())
@@ -166,9 +162,7 @@ class PluginScaffolder:
     def _run_git_init(self) -> None:
         cwd = str(self.plugin_dir)
         try:
-            subprocess.run(
-                ["git", "init"], cwd=cwd, check=True, capture_output=True
-            )
+            subprocess.run(["git", "init"], cwd=cwd, check=True, capture_output=True)
             subprocess.run(
                 ["git", "add", "."], cwd=cwd, check=True, capture_output=True
             )
@@ -184,8 +178,7 @@ class PluginScaffolder:
             ) from e
         except subprocess.CalledProcessError as e:
             raise RuntimeError(
-                "Falha ao inicializar repositório Git: "
-                f"{e.stderr.decode().strip()}"
+                f"Falha ao inicializar repositório Git: {e.stderr.decode().strip()}"
             ) from e
 
 
@@ -221,9 +214,7 @@ class PipelineAdder:
             )
 
         if self.pipeline_dir.exists():
-            raise FileExistsError(
-                f"Diretório '{self.pipeline_dir}' já existe."
-            )
+            raise FileExistsError(f"Diretório '{self.pipeline_dir}' já existe.")
 
         self.pipeline_dir.mkdir(parents=True)
         self.pipeline_dir.joinpath("fetch.toml").write_text(

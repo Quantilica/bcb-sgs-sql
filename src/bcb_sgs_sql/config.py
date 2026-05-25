@@ -9,8 +9,7 @@ from rich.logging import RichHandler
 APP_NAME = "bcb-sgs-sql"
 
 GLOBAL_CONFIG_PATH = (
-    Path(platformdirs.user_config_dir(APP_NAME, appauthor=False))
-    / "config.ini"
+    Path(platformdirs.user_config_dir(APP_NAME, appauthor=False)) / "config.ini"
 )
 LOCAL_CONFIG_PATH = Path("config.ini")
 
@@ -77,9 +76,7 @@ class Config:
         if missing:
             if len(missing) == sum(len(v) for v in _REQUIRED_KEYS.values()):
                 raise ConfigError(_SETUP_HINT)
-            lines = "\n".join(
-                f"  bcb-sgs-sql config set {k} <value>" for k in missing
-            )
+            lines = "\n".join(f"  bcb-sgs-sql config set {k} <value>" for k in missing)
             raise ConfigError(f"Missing configuration keys:\n\n{lines}")
 
     def __str__(self):

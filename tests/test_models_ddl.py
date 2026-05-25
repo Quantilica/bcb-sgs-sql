@@ -10,9 +10,7 @@ _DIALECT = postgresql.dialect()
 
 def _ddl(table) -> str:
     parts = [str(CreateTable(table).compile(dialect=_DIALECT))]
-    parts += [
-        str(CreateIndex(ix).compile(dialect=_DIALECT)) for ix in table.indexes
-    ]
+    parts += [str(CreateIndex(ix).compile(dialect=_DIALECT)) for ix in table.indexes]
     return "\n".join(parts)
 
 

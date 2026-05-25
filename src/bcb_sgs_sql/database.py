@@ -129,9 +129,7 @@ _METADATA_UPDATE_COLS = (
 )
 
 
-def save_series_metadata(
-    engine: sa.engine.Engine, rows: list[dict]
-) -> int:
+def save_series_metadata(engine: sa.engine.Engine, rows: list[dict]) -> int:
     """Upsert series catalog rows (keyed on ``series_id``).
 
     Each dict must contain ``series_id`` and any subset of the metadata
@@ -147,9 +145,7 @@ def save_series_metadata(
             batch = list(itertools.islice(rows_iter, _BATCH_SIZE))
             if not batch:
                 break
-            present = {k for r in batch for k in r} & set(
-                _METADATA_UPDATE_COLS
-            )
+            present = {k for r in batch for k in r} & set(_METADATA_UPDATE_COLS)
             stmt = pg_insert(models.SeriesMetadata.__table__).values(batch)
             stmt = stmt.on_conflict_do_update(
                 index_elements=["series_id"],
@@ -264,9 +260,7 @@ def load_series_data(
 # ---------------------------------------------------------------------------
 
 
-def get_loaded_filenames(
-    engine: sa.engine.Engine, filenames: set[str]
-) -> set[str]:
+def get_loaded_filenames(engine: sa.engine.Engine, filenames: set[str]) -> set[str]:
     """Return the subset of filenames already recorded in arquivo_carregado."""
     if not filenames:
         return set()
@@ -285,9 +279,7 @@ def record_loaded_files(
     series_id: int | None = None,
 ) -> None:
     """Record loaded source files (idempotent)."""
-    values = [
-        {"arquivo": name, "series_id": series_id} for name in filenames
-    ]
+    values = [{"arquivo": name, "series_id": series_id} for name in filenames]
     if not values:
         return
     with engine.begin() as conn:

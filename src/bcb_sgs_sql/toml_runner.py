@@ -88,13 +88,9 @@ class _MainOnlyTimeRemainingColumn(TimeRemainingColumn):
 def _make_progress(console: Console | None) -> Progress:
     return Progress(
         SpinnerColumn(finished_text="[green]✓[/green]"),
-        TextColumn(
-            "[progress.description]{task.description}", table_column=None
-        ),
+        TextColumn("[progress.description]{task.description}", table_column=None),
         BarColumn(bar_width=28),
-        TextColumn(
-            "[progress.percentage]{task.percentage:>3.0f}%", style="grey70"
-        ),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%", style="grey70"),
         _MainOnlyTimeElapsedColumn(),
         _MainOnlyTimeRemainingColumn(),
         console=console,
@@ -106,9 +102,7 @@ def _make_progress(console: Console | None) -> Progress:
 def _make_download_progress(console: Console | None) -> Progress:
     return Progress(
         SpinnerColumn(finished_text="[green]✓[/green]"),
-        TextColumn(
-            "[progress.description]{task.description}", table_column=None
-        ),
+        TextColumn("[progress.description]{task.description}", table_column=None),
         BarColumn(bar_width=28),
         MofNCompleteColumn(),
         _MainOnlyTimeElapsedColumn(),
@@ -139,9 +133,7 @@ class TomlScript:
         self.force_load = force_load
         self.console = console
         self.cache_ttl_hours = (
-            cache_ttl_hours
-            if cache_ttl_hours is not None
-            else config.cache_ttl_hours
+            cache_ttl_hours if cache_ttl_hours is not None else config.cache_ttl_hours
         )
         self.data_dir = config.data_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -168,13 +160,9 @@ class TomlScript:
         rows: list[dict] = []
         freq_by_id: dict[int, str | None] = {}
         for series_id in series_ids:
-            basic, full = fetcher.fetch_metadata(
-                series_id, force=self.force_metadata
-            )
+            basic, full = fetcher.fetch_metadata(series_id, force=self.force_metadata)
             with engine.begin() as conn:
-                theme_id = database.upsert_theme_hierarchy(
-                    conn, basic.theme_hierarchy
-                )
+                theme_id = database.upsert_theme_hierarchy(conn, basic.theme_hierarchy)
             acronym = _freq_acronym(basic.frequency)
             freq_by_id[series_id] = acronym
             rows.append(
@@ -202,9 +190,7 @@ class TomlScript:
 
     def _run(self, engine: sa.engine.Engine):
         selectors = self.get_selectors()
-        with sgs.Fetcher(
-            self.data_dir, max_workers=self.max_workers
-        ) as fetcher:
+        with sgs.Fetcher(self.data_dir, max_workers=self.max_workers) as fetcher:
             series_ids = fetcher.plan_series(selectors, engine=engine)
 
             if self.console is not None:
@@ -236,9 +222,7 @@ class TomlScript:
                     series_ids,
                     on_done=lambda: progress.advance(meta_task),
                 )
-                progress.update(
-                    meta_task, description=f"Metadados ({n}) ✓"
-                )
+                progress.update(meta_task, description=f"Metadados ({n}) ✓")
 
             now = dt.datetime.now()
             ttl = dt.timedelta(hours=self.cache_ttl_hours)
@@ -260,9 +244,7 @@ class TomlScript:
                     frequency_by_id=freq_by_id,
                     on_done=lambda: progress.advance(dl_task),
                 )
-                progress.update(
-                    dl_task, description="Download concluído ✓"
-                )
+                progress.update(dl_task, description="Download concluído ✓")
 
         files = []
         for sid in series_ids:

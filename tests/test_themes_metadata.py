@@ -14,13 +14,9 @@ def _theme_count(engine) -> int:
 
 def test_theme_hierarchy_idempotent(engine):
     with engine.begin() as conn:
-        leaf1 = database.upsert_theme_hierarchy(
-            conn, ["Preços", "Índices", "IPCA"]
-        )
+        leaf1 = database.upsert_theme_hierarchy(conn, ["Preços", "Índices", "IPCA"])
     with engine.begin() as conn:
-        leaf2 = database.upsert_theme_hierarchy(
-            conn, ["Preços", "Índices", "IPCA"]
-        )
+        leaf2 = database.upsert_theme_hierarchy(conn, ["Preços", "Índices", "IPCA"])
     assert leaf1 == leaf2
     assert _theme_count(engine) == 3
 
@@ -43,9 +39,7 @@ def test_save_series_metadata_upsert(engine):
     database.save_series_metadata(
         engine, [{"series_id": 433, "name": "IPCA", "frequency": "Mensal"}]
     )
-    database.save_series_metadata(
-        engine, [{"series_id": 433, "name": "IPCA novo"}]
-    )
+    database.save_series_metadata(engine, [{"series_id": 433, "name": "IPCA novo"}])
     with engine.connect() as conn:
         row = conn.execute(
             sa.select(
@@ -62,8 +56,14 @@ def test_metadata_links_theme(engine):
         theme_id = database.upsert_theme_hierarchy(conn, ["Preços"])
     database.save_series_metadata(
         engine,
-        [{"series_id": 1, "name": "X", "theme_id": theme_id,
-          "theme_hierarchy": ["Preços"]}],
+        [
+            {
+                "series_id": 1,
+                "name": "X",
+                "theme_id": theme_id,
+                "theme_hierarchy": ["Preços"],
+            }
+        ],
     )
     with engine.connect() as conn:
         tid = conn.execute(

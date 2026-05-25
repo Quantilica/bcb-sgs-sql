@@ -16,9 +16,9 @@ D2 = dt.date(2020, 2, 1)
 
 
 def _rows(engine, **where):
-    stmt = sa.select(
-        models.SeriesData.value, models.SeriesData.ativo
-    ).order_by(models.SeriesData.loaded_at, models.SeriesData.id)
+    stmt = sa.select(models.SeriesData.value, models.SeriesData.ativo).order_by(
+        models.SeriesData.loaded_at, models.SeriesData.id
+    )
     for k, v in where.items():
         stmt = stmt.where(getattr(models.SeriesData, k) == v)
     with engine.connect() as conn:

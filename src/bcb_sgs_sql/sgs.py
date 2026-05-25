@@ -109,14 +109,10 @@ class Fetcher:
                         "run metadata first"
                     )
                 ids.update(
-                    self._query_by_theme(
-                        engine, sel["themes"], sel.get("frequency")
-                    )
+                    self._query_by_theme(engine, sel["themes"], sel.get("frequency"))
                 )
             else:
-                raise ValueError(
-                    "each [[series]] entry needs 'ids' or 'themes'"
-                )
+                raise ValueError("each [[series]] entry needs 'ids' or 'themes'")
         return sorted(ids)
 
     @staticmethod
@@ -129,9 +125,7 @@ class Fetcher:
             models.SeriesMetadata.theme_hierarchy.overlap(themes)
         )
         if frequency:
-            stmt = stmt.where(
-                models.SeriesMetadata.frequency_acronym == frequency
-            )
+            stmt = stmt.where(models.SeriesMetadata.frequency_acronym == frequency)
         with engine.connect() as conn:
             return [row.series_id for row in conn.execute(stmt)]
 
@@ -144,9 +138,7 @@ class Fetcher:
         """Rebuild the metadata dataclasses from cached dicts."""
         basic = SeriesMetadataBasic(**basic_d)
         full = (
-            SeriesMetadataFull(**full_d)
-            if full_d is not None
-            else SeriesMetadataFull()
+            SeriesMetadataFull(**full_d) if full_d is not None else SeriesMetadataFull()
         )
         return basic, full
 
@@ -165,13 +157,9 @@ class Fetcher:
                     storage.read_basic_metadata(self.data_dir, series_id),
                     storage.read_full_metadata(self.data_dir, series_id),
                 )
-            combined = storage.read_combined_metadata(
-                self.data_dir, series_id
-            )
+            combined = storage.read_combined_metadata(self.data_dir, series_id)
             if combined is not None:
-                return self._build_metadata(
-                    combined[BASIC], combined.get(FULL)
-                )
+                return self._build_metadata(combined[BASIC], combined.get(FULL))
 
         scraper = self._ensure_scraper()
         html = scraper.request_metadata_html(series_id)
@@ -189,9 +177,7 @@ class Fetcher:
 
     # -- observations ----------------------------------------------------
 
-    def _fetch_one(
-        self, series_id: int, frequency_acronym: str | None
-    ) -> list:
+    def _fetch_one(self, series_id: int, frequency_acronym: str | None) -> list:
         last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES):
             try:
@@ -202,8 +188,7 @@ class Fetcher:
                 last_exc = e
                 wait = _BACKOFF_BASE * (2**attempt)
                 logger.warning(
-                    "Error fetching series %s (attempt %d/%d): %s; "
-                    "retrying in %ds",
+                    "Error fetching series %s (attempt %d/%d): %s; retrying in %ds",
                     series_id,
                     attempt + 1,
                     _MAX_RETRIES,
@@ -212,8 +197,7 @@ class Fetcher:
                 )
                 time.sleep(wait)
         raise RuntimeError(
-            f"Failed to fetch series {series_id} after "
-            f"{_MAX_RETRIES} attempts"
+            f"Failed to fetch series {series_id} after {_MAX_RETRIES} attempts"
         ) from last_exc
 
     def download_series(
@@ -239,28 +223,18 @@ class Fetcher:
                 new_records = [point_to_record(p) for p in points]
                 latest = storage.latest_series_file(self.data_dir, series_id)
                 old_records = (
-                    storage.read_series_data(latest)
-                    if latest is not None
-                    else None
+                    storage.read_series_data(latest) if latest is not None else None
                 )
-                if old_records is None or not _records_equal(
-                    old_records, new_records
-                ):
-                    storage.write_series_data(
-                        self.data_dir, series_id, new_records
-                    )
+                if old_records is None or not _records_equal(old_records, new_records):
+                    storage.write_series_data(self.data_dir, series_id, new_records)
                 else:
-                    logger.info(
-                        "Series %s unchanged; discarding download", series_id
-                    )
+                    logger.info("Series %s unchanged; discarding download", series_id)
             if self.sleep:
                 time.sleep(self.sleep)
             return points
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            futures = {
-                pool.submit(task, sid): sid for sid in series_ids
-            }
+            futures = {pool.submit(task, sid): sid for sid in series_ids}
             for fut in as_completed(futures):
                 all_points.extend(fut.result())
                 if on_done is not None:

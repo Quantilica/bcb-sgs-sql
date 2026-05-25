@@ -68,17 +68,13 @@ class Theme(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(
-        Integer, Identity(always=True), primary_key=True
-    )
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False, index=True)
     level: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("theme.id"), nullable=True, index=True
     )
-    children = relationship(
-        "Theme", backref=sa.orm.backref("parent", remote_side=[id])
-    )
+    children = relationship("Theme", backref=sa.orm.backref("parent", remote_side=[id]))
 
 
 class SeriesMetadata(Base):
@@ -174,9 +170,7 @@ class SeriesData(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(
-        BigInteger, Identity(always=True), primary_key=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
     series_id: Mapped[int] = mapped_column(
         ForeignKey("series_metadata.series_id"),
         nullable=False,
@@ -190,9 +184,7 @@ class SeriesData(Base):
         nullable=False,
         server_default=func.now(),
     )
-    ativo: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True
-    )
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class ArquivoCarregado(Base):

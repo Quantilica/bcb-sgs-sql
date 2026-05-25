@@ -39,9 +39,7 @@ def test_basic_to_metadata_row_field_mapping():
         "end_date": "2020-12-01",
     }
     full = {"last_update": "2021-01-01", "provider_data": [{"a": 1}]}
-    row = loader.basic_to_metadata_row(
-        basic, full, frequency_acronym="M", theme_id=7
-    )
+    row = loader.basic_to_metadata_row(basic, full, frequency_acronym="M", theme_id=7)
     assert row["series_id"] == 433
     assert row["owner_manager"] == "Depec"
     assert row["series_primitive"] == "1,2"
@@ -55,10 +53,8 @@ def test_basic_to_metadata_row_field_mapping():
 
 def test_read_json_rows(tmp_path):
     records = [
-        {"series_id": 1, "date": "2020-01-01", "value": "1.5",
-         "date_end": None},
-        {"series_id": 1, "date": "2020-02-01", "value": "2.5",
-         "date_end": None},
+        {"series_id": 1, "date": "2020-01-01", "value": "1.5", "date_end": None},
+        {"series_id": 1, "date": "2020-02-01", "value": "2.5", "date_end": None},
     ]
     p = tmp_path / "series.json"
     p.write_text(json.dumps(records))

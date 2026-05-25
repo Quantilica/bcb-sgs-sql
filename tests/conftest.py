@@ -28,9 +28,7 @@ def _engine():
     try:
         base = sa.create_engine(_DSN)
         with base.connect() as conn:
-            conn.execute(
-                sa.text(f'DROP SCHEMA IF EXISTS "{_TEST_SCHEMA}" CASCADE')
-            )
+            conn.execute(sa.text(f'DROP SCHEMA IF EXISTS "{_TEST_SCHEMA}" CASCADE'))
             conn.execute(sa.text(f'CREATE SCHEMA "{_TEST_SCHEMA}"'))
             conn.commit()
     except Exception as e:  # noqa: BLE001
@@ -42,9 +40,7 @@ def _engine():
     models.Base.metadata.create_all(engine)
     yield engine
     with base.connect() as conn:
-        conn.execute(
-            sa.text(f'DROP SCHEMA IF EXISTS "{_TEST_SCHEMA}" CASCADE')
-        )
+        conn.execute(sa.text(f'DROP SCHEMA IF EXISTS "{_TEST_SCHEMA}" CASCADE'))
         conn.commit()
     engine.dispose()
     base.dispose()

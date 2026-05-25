@@ -54,9 +54,7 @@ def run_subtree(
 
     if fetch_path.exists():
         if console:
-            console.rule(
-                f"[bold cyan]fetch[/bold cyan]  {path.name}", style="cyan dim"
-            )
+            console.rule(f"[bold cyan]fetch[/bold cyan]  {path.name}", style="cyan dim")
         t0 = time.monotonic()
         TomlScript(
             config,
@@ -69,8 +67,7 @@ def run_subtree(
         if console:
             elapsed = time.monotonic() - t0
             console.print(
-                f"  [green]✓[/green] fetch concluído em "
-                f"[bold]{elapsed:.1f}s[/bold]"
+                f"  [green]✓[/green] fetch concluído em [bold]{elapsed:.1f}s[/bold]"
             )
 
     if transform_path.exists():
@@ -84,6 +81,5 @@ def run_subtree(
         if console:
             elapsed = time.monotonic() - t0
             console.print(
-                f"  [green]✓[/green] transform concluído em "
-                f"[bold]{elapsed:.1f}s[/bold]"
+                f"  [green]✓[/green] transform concluído em [bold]{elapsed:.1f}s[/bold]"
             )
