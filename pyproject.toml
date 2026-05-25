@@ -29,7 +29,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
-    "bcb-sgs-fetcher @ git+ssh://git@github.com/Quantilica/bcb-sgs-fetcher.git@v0.4.0#egg=bcb-sgs-fetcher",
+    "bcb-sgs-fetcher @ git+https://github.com/Quantilica/bcb-sgs-fetcher.git@v0.4.0",
     "psycopg[binary]>=3.2.9",
     "sqlalchemy>=2.0.41",
     "orjson>=3.11.7",
