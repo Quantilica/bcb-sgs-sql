@@ -78,6 +78,7 @@ def basic_to_metadata_row(
     """Map a ``SeriesMetadataBasic`` dict (+ full) to a catalog row."""
     row: dict = {
         "series_id": int(basic["series_id"]),
+        "name_index": basic.get("name"),
         "name": basic.get("name"),
         "name_abbreviated": basic.get("name_abbreviated"),
         "name_english": basic.get("name_english"),
