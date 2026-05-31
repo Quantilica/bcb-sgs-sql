@@ -1,6 +1,6 @@
 [project]
 name = "bcb-sgs-sql"
-version = "0.1.0"
+version = "0.1.1"
 description = "Séries temporais do BCB SGS em PostgreSQL"
 readme = "README.md"
 authors = [
