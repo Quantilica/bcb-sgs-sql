@@ -65,6 +65,91 @@ def test_read_json_rows(tmp_path):
     assert rows[0][3] == Decimal("1.5")
 
 
-def test_classify(tmp_path):
+def test_classify_split(tmp_path):
     (tmp_path / "000433_basic.json").write_text("{}")
     assert loader._classify(tmp_path) == "metadata"
+
+
+def _write_combined(path, series_id, basic=None, full=None):
+    payload = {
+        "basic": {"series_id": series_id, "name": f"S{series_id}", **(basic or {})},
+        "full": full,
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_iter_metadata_reads_combined(tmp_path):
+    _write_combined(
+        tmp_path / "000001.json",
+        1,
+        basic={"frequency": "Diária", "theme_hierarchy": ["A", "B"]},
+        full={"last_update": "2021-01-01"},
+    )
+    pairs = list(loader.iter_metadata(tmp_path))
+    assert len(pairs) == 1
+    basic, full = pairs[0]
+    assert basic["series_id"] == 1
+    assert basic["theme_hierarchy"] == ["A", "B"]
+    assert full["last_update"] == "2021-01-01"
+
+
+def test_iter_metadata_reads_split(tmp_path):
+    (tmp_path / "000002_basic.json").write_text(
+        json.dumps({"series_id": 2, "name": "S2"})
+    )
+    (tmp_path / "000002_full.json").write_text(
+        json.dumps({"last_update": "2020-01-01"})
+    )
+    pairs = list(loader.iter_metadata(tmp_path))
+    assert len(pairs) == 1
+    basic, full = pairs[0]
+    assert basic["series_id"] == 2
+    assert full["last_update"] == "2020-01-01"
+
+
+def test_iter_metadata_ignores_observation_lists(tmp_path):
+    (tmp_path / "999999.json").write_text(
+        json.dumps([{"series_id": 1, "date": "2020-01-01", "value": "1"}])
+    )
+    assert list(loader.iter_metadata(tmp_path)) == []
+
+
+def test_classify_combined(tmp_path):
+    _write_combined(tmp_path / "000001.json", 1)
+    assert loader._classify(tmp_path) == "metadata"
+
+
+def test_classify_observations(tmp_path):
+    (tmp_path / "series_1@20200101T000000.json").write_text(
+        json.dumps([{"series_id": 1, "date": "2020-01-01", "value": "1"}])
+    )
+    assert loader._classify(tmp_path) == "json"
+
+
+def test_resolve_metadata_dir_month_partition(tmp_path):
+    meta = tmp_path / "bcb-sgs_2026-05" / "metadata"
+    meta.mkdir(parents=True)
+    _write_combined(meta / "000001.json", 1)
+    assert loader._resolve_metadata_dir(tmp_path) == meta
+
+
+def test_resolve_metadata_dir_subdir(tmp_path):
+    meta = tmp_path / "metadata"
+    meta.mkdir()
+    _write_combined(meta / "000001.json", 1)
+    assert loader._resolve_metadata_dir(tmp_path) == meta
+
+
+def test_resolve_data_dir(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    assert loader._resolve_data_dir(tmp_path) == data
+    assert loader._resolve_data_dir(tmp_path / "missing") is None
+
+
+def test_freq_acronym_reexported_from_toml_runner():
+    from bcb_sgs_sql.toml_runner import _freq_acronym
+
+    assert _freq_acronym("Diária") == "D"
+    assert _freq_acronym("Mensal") == "M"
+    assert _freq_acronym(None) is None

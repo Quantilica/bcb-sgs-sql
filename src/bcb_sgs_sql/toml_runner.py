@@ -47,28 +47,14 @@ from rich.text import Text
 
 from . import database, sgs
 from .config import Config
-from .loader import basic_to_metadata_row, load_observation_files
+from .loader import (
+    _FREQ_ACRONYM,  # noqa: F401  (re-exported for backwards compat)
+    _freq_acronym,
+    basic_to_metadata_row,
+    load_observation_files,
+)
 
 logger = logging.getLogger(__name__)
-
-# Portuguese frequency label (basic metadata) → SGS acronym. Only "D"
-# triggers the daily-retroactive download strategy.
-_FREQ_ACRONYM = {
-    "diária": "D",
-    "diario": "D",
-    "diária ": "D",
-    "semanal": "S",
-    "mensal": "M",
-    "trimestral": "T",
-    "quadrimestral": "Qd",
-    "anual": "A",
-}
-
-
-def _freq_acronym(frequency: str | None) -> str | None:
-    if not frequency:
-        return None
-    return _FREQ_ACRONYM.get(frequency.strip().lower())
 
 
 class _MainOnlyTimeElapsedColumn(TimeElapsedColumn):

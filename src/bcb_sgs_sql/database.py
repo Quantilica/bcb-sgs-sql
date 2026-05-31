@@ -138,15 +138,24 @@ def save_series_metadata(engine: sa.engine.Engine, rows: list[dict]) -> int:
     """
     if not rows:
         return 0
+    # Cap the batch so rows × columns stays under Postgres' 65535-parameter
+    # limit (full-catalog loads upsert ~19k rows of ~30 columns each).
+    max_cols = len(_METADATA_UPDATE_COLS) + 1  # + series_id
+    batch_size = min(_BATCH_SIZE, max(1, 65535 // max_cols))
     total = 0
     with engine.begin() as conn:
         rows_iter = iter(rows)
         while True:
-            batch = list(itertools.islice(rows_iter, _BATCH_SIZE))
+            batch = list(itertools.islice(rows_iter, batch_size))
             if not batch:
                 break
-            present = {k for r in batch for k in r} & set(_METADATA_UPDATE_COLS)
-            stmt = pg_insert(models.SeriesMetadata.__table__).values(batch)
+            # Rows may carry heterogeneous key sets (optional columns are
+            # omitted when absent); normalize each batch to a uniform shape
+            # so the multi-row VALUES clause is well-formed.
+            keys = {k for r in batch for k in r}
+            norm = [{k: r.get(k) for k in keys} for r in batch]
+            present = keys & set(_METADATA_UPDATE_COLS)
+            stmt = pg_insert(models.SeriesMetadata.__table__).values(norm)
             stmt = stmt.on_conflict_do_update(
                 index_elements=["series_id"],
                 set_={c: getattr(stmt.excluded, c) for c in present},

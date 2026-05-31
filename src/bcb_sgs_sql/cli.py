@@ -539,7 +539,14 @@ def transform_pipeline(
 
 @app.command("load")
 def load_files(
-    path: Path = typer.Argument(..., help="Arquivo ou diretório com JSON/metadados"),
+    path: Path = typer.Argument(
+        None,
+        help=(
+            "Arquivo, pasta de metadados, ou raiz do dataset "
+            "(ex.: J:\\data\\raw\\bcb-sgs). Resolve sozinho o "
+            "bcb-sgs_YYYY-MM/metadata/ mais recente. Padrão: storage.data_dir."
+        ),
+    ),
     kind: str = typer.Option(
         "auto",
         "--kind",
@@ -548,14 +555,25 @@ def load_files(
     force_load: bool = typer.Option(
         False, "--force-load", help="Recarregar arquivos já registrados"
     ),
+    with_data: bool = typer.Option(
+        False,
+        "--with-data",
+        help="Após os metadados, também carrega as observações de data/",
+    ),
 ):
-    """Carrega dados de arquivos em disco no PostgreSQL (sem rede)."""
+    """Carrega dados de arquivos em disco no PostgreSQL (sem rede).
+
+    Entende o layout combinado ({id:06d}.json com {"basic", "full"}) e o
+    legado split (_basic.json/_full.json) escritos pelo bcb-sgs-fetcher.
+    """
     from bcb_sgs_sql import loader
 
     try:
         config = Config()
         _print_header()
-        loader.load(config, path, kind=kind, force_load=force_load)
+        loader.load(
+            config, path, kind=kind, force_load=force_load, with_data=with_data
+        )
         console.print("[bold green]Load completed successfully![/bold green]")
     except ConfigError as e:
         console.print(f"[bold yellow]{e}[/bold yellow]")
