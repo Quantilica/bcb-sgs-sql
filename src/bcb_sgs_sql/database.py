@@ -5,6 +5,7 @@ Public functions:
 - :func:`get_engine` — create a SQLAlchemy engine from :class:`Config`.
 - :func:`upsert_theme_hierarchy` — idempotently insert a theme chain and
   return the leaf ``theme.id``.
+- :func:`prune_empty_themes` — delete themes with no series in their subtree.
 - :func:`save_series_metadata` — upsert series catalog rows.
 - :func:`load_series_data` — soft-versioned load of observations.
 - :func:`get_loaded_filenames` / :func:`record_loaded_files` — file-level
@@ -89,6 +90,58 @@ def upsert_theme_hierarchy(
         ).returning(models.Theme.id)
         parent_id = conn.execute(stmt).scalar_one()
     return parent_id
+
+
+def prune_empty_themes(engine: sa.engine.Engine) -> int:
+    """Delete themes that have no series anywhere in their subtree.
+
+    A theme is kept when it (or any of its descendants) is referenced by at
+    least one series; every other theme is removed. The whole tree is loaded
+    once and pruned in memory, so this runs in a couple of queries regardless
+    of hierarchy depth. Returns the number of themes deleted.
+    """
+    theme = models.Theme.__table__
+    series = models.SeriesMetadata.__table__
+    with engine.begin() as conn:
+        themes = conn.execute(
+            sa.select(theme.c.id, theme.c.parent_id, theme.c.level)
+        ).all()
+        if not themes:
+            return 0
+
+        referenced = {
+            row.theme_id
+            for row in conn.execute(
+                sa.select(series.c.theme_id)
+                .where(series.c.theme_id.isnot(None))
+                .distinct()
+            )
+        }
+
+        parent_of = {row.id: row.parent_id for row in themes}
+
+        # Keep every referenced theme plus all of its ancestors.
+        keep: set[int] = set()
+        for theme_id in referenced:
+            current = theme_id
+            while current is not None and current not in keep:
+                keep.add(current)
+                current = parent_of.get(current)
+
+        # Group the doomed themes by level and delete the deepest first, so the
+        # self-referential parent_id foreign key is never violated.
+        by_level: dict[int, list[int]] = {}
+        for row in themes:
+            if row.id not in keep:
+                by_level.setdefault(row.level, []).append(row.id)
+
+        deleted = 0
+        for level in sorted(by_level, reverse=True):
+            ids = by_level[level]
+            conn.execute(sa.delete(theme).where(theme.c.id.in_(ids)))
+            deleted += len(ids)
+
+    return deleted
 
 
 # ---------------------------------------------------------------------------

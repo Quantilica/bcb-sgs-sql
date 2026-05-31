@@ -51,6 +51,32 @@ def test_save_series_metadata_upsert(engine):
     assert row.frequency == "Mensal"
 
 
+def test_prune_empty_themes(engine):
+    # Two chains: "Preços → IPCA" gets a series; "Vazio → Órfão" stays empty.
+    with engine.begin() as conn:
+        ipca_id = database.upsert_theme_hierarchy(conn, ["Preços", "IPCA"])
+        database.upsert_theme_hierarchy(conn, ["Vazio", "Órfão"])
+    assert _theme_count(engine) == 4
+
+    database.save_series_metadata(
+        engine,
+        [{"series_id": 433, "name": "IPCA", "theme_id": ipca_id}],
+    )
+
+    removed = database.prune_empty_themes(engine)
+
+    # "Vazio" and "Órfão" go; "Preços" is kept as the ancestor of "IPCA".
+    assert removed == 2
+    with engine.connect() as conn:
+        names = {
+            r.name
+            for r in conn.execute(sa.select(models.Theme.name)).all()
+        }
+    assert names == {"Preços", "IPCA"}
+    # Idempotent: a second prune removes nothing.
+    assert database.prune_empty_themes(engine) == 0
+
+
 def test_metadata_links_theme(engine):
     with engine.begin() as conn:
         theme_id = database.upsert_theme_hierarchy(conn, ["Preços"])

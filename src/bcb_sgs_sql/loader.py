@@ -264,6 +264,9 @@ def load_metadata_dir(config: Config, path: Path) -> int:
             )
     n = database.save_series_metadata(engine, rows)
     logger.info("Loaded metadata for %d series from %s", n, path)
+    removed = database.prune_empty_themes(engine)
+    if removed:
+        logger.info("Pruned %d theme(s) with no series in their subtree", removed)
     return n
 
 
