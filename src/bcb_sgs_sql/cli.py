@@ -73,7 +73,7 @@ def config_set(
     use_global: bool = typer.Option(
         False,
         "--global",
-        help="Write to global config (~/.config/bcb-sgs-sql/config.ini)",
+        help="Write to global config (~/.config/quantilica/bcb-sgs-sql/config.ini)",
     ),
 ):
     """Set a configuration value."""
