@@ -1,12 +1,13 @@
 [project]
 name = "bcb-sgs-sql"
-version = "0.1.1"
+version = "0.2.0"
 description = "Séries temporais do BCB SGS em PostgreSQL"
 readme = "README.md"
 authors = [
     { name = "Komesu, D.K.", email = "daniel@dkko.me" },
 ]
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 keywords = [
     "bcb",
@@ -21,14 +22,16 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
 ]
 dependencies = [
+    # TODO: após publicar bcb-sgs-fetcher no PyPI, trocar para "bcb-sgs-fetcher>=0.5.0"
+    # (e remover [tool.hatch.metadata] allow-direct-references abaixo).
     "bcb-sgs-fetcher @ git+https://github.com/Quantilica/bcb-sgs-fetcher.git@v0.4.0",
     "psycopg[binary]>=3.2.9",
     "sqlalchemy>=2.0.41",
@@ -52,16 +55,27 @@ dev = [
     "pytest>=8.0.0",
 ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/bcb_sgs_sql"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-p", "no:cacheprovider"]
 
-[tool.hatch.metadata]
-allow-direct-references = true
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 # Typer uses calls (typer.Option/Argument) in argument defaults by design.
 "src/bcb_sgs_sql/cli.py" = ["B008"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/bcb_sgs_sql"]
+
+# Mantido porque a dependência de bcb-sgs-fetcher ainda é via git (ver TODO acima).
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"

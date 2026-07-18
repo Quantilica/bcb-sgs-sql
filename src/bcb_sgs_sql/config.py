@@ -59,7 +59,8 @@ class Config:
             GLOBAL_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
             GLOBAL_CONFIG_PATH.write_text(_OLD_GLOBAL_CONFIG_PATH.read_text())
             warnings.warn(
-                f"Config migrated from {_OLD_GLOBAL_CONFIG_PATH} to {GLOBAL_CONFIG_PATH}",
+                f"Config migrated from {_OLD_GLOBAL_CONFIG_PATH} "
+                f"to {GLOBAL_CONFIG_PATH}",
                 stacklevel=2,
             )
 
@@ -95,9 +96,10 @@ class Config:
             raise ConfigError(f"Missing configuration keys:\n\n{lines}")
 
     def __str__(self):
+        masked = "*" * len(self.db_password) if self.db_password else ""
         return (
             f"db_user: {self.db_user}\n"
-            f"db_password: {self.db_password}\n"
+            f"db_password: {masked}\n"
             f"db_host: {self.db_host}\n"
             f"db_port: {self.db_port}\n"
             f"db_name: {self.db_name}\n"

@@ -458,6 +458,7 @@ def run_pipeline(
         import traceback
 
         traceback.print_exc()
+        raise typer.Exit(1) from e
 
 
 @app.command("run-path")
@@ -535,6 +536,7 @@ def transform_pipeline(
         import traceback
 
         traceback.print_exc()
+        raise typer.Exit(1) from e
 
 
 @app.command("load")
@@ -571,9 +573,7 @@ def load_files(
     try:
         config = Config()
         _print_header()
-        loader.load(
-            config, path, kind=kind, force_load=force_load, with_data=with_data
-        )
+        loader.load(config, path, kind=kind, force_load=force_load, with_data=with_data)
         console.print("[bold green]Load completed successfully![/bold green]")
     except ConfigError as e:
         console.print(f"[bold yellow]{e}[/bold yellow]")

@@ -68,10 +68,7 @@ def test_prune_empty_themes(engine):
     # "Vazio" and "Órfão" go; "Preços" is kept as the ancestor of "IPCA".
     assert removed == 2
     with engine.connect() as conn:
-        names = {
-            r.name
-            for r in conn.execute(sa.select(models.Theme.name)).all()
-        }
+        names = {r.name for r in conn.execute(sa.select(models.Theme.name)).all()}
     assert names == {"Preços", "IPCA"}
     # Idempotent: a second prune removes nothing.
     assert database.prune_empty_themes(engine) == 0
