@@ -7,6 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [0.2.1] - 2026-07-18
 
+### Alterado
+
+- Dependência de `bcb-sgs-fetcher` trocada de `git+https://...@v0.4.0` para
+  `bcb-sgs-fetcher>=0.5.0` (versão publicada no PyPI); removido
+  `[tool.hatch.metadata] allow-direct-references`. Primeiro release publicável
+  do `bcb-sgs-sql` no PyPI.
+
 ### Corrigido
 
 - **NULL-overwrite em `save_series_metadata`**: em um batch com chaves

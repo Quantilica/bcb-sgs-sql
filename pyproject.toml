@@ -30,9 +30,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    # TODO: após publicar bcb-sgs-fetcher no PyPI, trocar para "bcb-sgs-fetcher>=0.5.0"
-    # (e remover [tool.hatch.metadata] allow-direct-references abaixo).
-    "bcb-sgs-fetcher @ git+https://github.com/Quantilica/bcb-sgs-fetcher.git@v0.4.0",
+    "bcb-sgs-fetcher>=0.5.0",
     "psycopg[binary]>=3.2.9",
     "sqlalchemy>=2.0.41",
     "orjson>=3.11.7",
@@ -71,10 +69,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bcb_sgs_sql"]
-
-# Mantido porque a dependência de bcb-sgs-fetcher ainda é via git (ver TODO acima).
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [build-system]
 requires = ["hatchling>=1.27"]
