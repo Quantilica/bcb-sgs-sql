@@ -5,6 +5,25 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [0.2.1] - 2026-07-18
+
+### Corrigido
+
+- **NULL-overwrite em `save_series_metadata`**: em um batch com chaves
+  heterogêneas, uma coluna omitida (normalizada para NULL) sobrescrevia o valor
+  existente. Agora usa `COALESCE(excluded, atual)` — colunas ausentes ficam
+  intactas no update.
+- **Registry do plugin_manager** movido para `~/.config/quantilica/bcb-sgs-sql/`
+  (antes flat `~/.config/bcb-sgs-sql/`), alinhado ao `config.ini`; migração
+  one-time com `UserWarning`.
+- **Log criado no import** (`bcb-sgs-sql.log` no CWD): a configuração de logging
+  saiu do `__init__` para `cli.main()` — importar a biblioteca não tem mais
+  efeitos colaterais.
+- **Senha na DSN**: `get_engine` usa `sqlalchemy.URL.create` (mascara a senha
+  como `***` no repr da URL) em vez de f-string.
+- Remove chave `"diária "` inalcançável de `_FREQ_ACRONYM`; documenta a
+  duplicação `name_index == name`.
+
 ## [0.2.0] - 2026-07-18
 
 ### Corrigido

@@ -3,14 +3,16 @@ import logging
 import shutil
 import subprocess
 import tomllib
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
 import platformdirs
 
+from .config import APP_NAME
+
 logger = logging.getLogger(__name__)
 
-APP_NAME = "bcb-sgs-sql"
 DEFAULT_PLUGIN_URL = "https://github.com/Quantilica/bcb-sgs-pipelines.git"
 DEFAULT_PLUGIN_ALIAS = "std"
 
@@ -32,16 +34,45 @@ class PluginManifest:
 
 class PluginRegistry:
     def __init__(self):
-        self.config_dir = Path(platformdirs.user_config_dir(APP_NAME, appauthor=False))
-        self.data_dir = Path(platformdirs.user_data_dir(APP_NAME, appauthor=False))
+        # Namespaced under quantilica/ per docs/normas/configuracao.md, matching
+        # the config.ini location (config.py). The pre-quantilica/ layout used a
+        # flat ``<APP_NAME>/`` root; migrate it once, with a UserWarning.
+        self.config_dir = (
+            Path(platformdirs.user_config_dir("quantilica", appauthor=False)) / APP_NAME
+        )
+        self.data_dir = (
+            Path(platformdirs.user_data_dir("quantilica", appauthor=False)) / APP_NAME
+        )
         self.plugins_dir = self.data_dir / "plugins"
         self.registry_file = self.config_dir / "registry.json"
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self._migrate_legacy_layout()
         self.plugins_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.registry_file.exists():
             self._save_registry({})
+
+    def _migrate_legacy_layout(self) -> None:
+        """Move a pre-quantilica/ registry + plugins dir to the new location."""
+        old_config_dir = Path(platformdirs.user_config_dir(APP_NAME, appauthor=False))
+        old_data_dir = Path(platformdirs.user_data_dir(APP_NAME, appauthor=False))
+        old_registry = old_config_dir / "registry.json"
+        old_plugins = old_data_dir / "plugins"
+
+        if not self.registry_file.exists() and old_registry.exists():
+            shutil.copy2(old_registry, self.registry_file)
+            warnings.warn(
+                f"Plugin registry migrated from {old_registry} to {self.registry_file}",
+                stacklevel=2,
+            )
+        if not self.plugins_dir.exists() and old_plugins.exists():
+            shutil.move(str(old_plugins), str(self.plugins_dir))
+            warnings.warn(
+                f"Plugins moved from {old_plugins} to {self.plugins_dir}",
+                stacklevel=2,
+            )
 
     def _load_registry(self) -> dict:
         with open(self.registry_file, encoding="utf-8") as f:

@@ -44,12 +44,18 @@ Row = tuple[int, dt.date, dt.date | None, object]
 
 def get_engine(config: Config) -> sa.engine.Engine:
     """Create and return a SQLAlchemy engine for the configured DB."""
-    connection_string = (
-        f"postgresql+psycopg://{config.db_user}:{config.db_password}"
-        f"@{config.db_host}:{config.db_port}/{config.db_name}"
+    # Build the URL via URL.create (not an f-string) so the password is masked
+    # as ``***`` in the URL's repr/str and does not leak into tracebacks/logs.
+    url = sa.URL.create(
+        "postgresql+psycopg",
+        username=config.db_user,
+        password=config.db_password,
+        host=config.db_host,
+        port=int(config.db_port),
+        database=config.db_name,
     )
     return sa.create_engine(
-        connection_string,
+        url,
         connect_args={"options": f"-c search_path={config.db_schema}"},
     )
 
@@ -208,10 +214,18 @@ def save_series_metadata(engine: sa.engine.Engine, rows: list[dict]) -> int:
             keys = {k for r in batch for k in r}
             norm = [{k: r.get(k) for k in keys} for r in batch]
             present = keys & set(_METADATA_UPDATE_COLS)
-            stmt = pg_insert(models.SeriesMetadata.__table__).values(norm)
+            table = models.SeriesMetadata.__table__
+            stmt = pg_insert(table).values(norm)
+            # COALESCE(excluded, current): a row that omitted a column (normalized
+            # to NULL for a well-formed multi-row VALUES) must NOT overwrite an
+            # existing value with NULL — keep the stored value. Honors the
+            # docstring's "missing columns are left untouched on update".
             stmt = stmt.on_conflict_do_update(
                 index_elements=["series_id"],
-                set_={c: getattr(stmt.excluded, c) for c in present},
+                set_={
+                    c: sa.func.coalesce(getattr(stmt.excluded, c), table.c[c])
+                    for c in present
+                },
             )
             conn.execute(stmt)
             total += len(batch)

@@ -15,6 +15,7 @@ from bcb_sgs_sql.config import (
     LOCAL_CONFIG_PATH,
     Config,
     ConfigError,
+    setup_logging,
 )
 from bcb_sgs_sql.plugin_manager import PluginManager
 from bcb_sgs_sql.runner import run_subtree
@@ -594,6 +595,9 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     logging.basicConfig(level=logging.WARNING)
+    # Configure file/rich logging here (at CLI startup) rather than at package
+    # import time, so importing the library has no side effects.
+    setup_logging("bcb_sgs_sql", "bcb-sgs-sql.log")
     app()
 
 

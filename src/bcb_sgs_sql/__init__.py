@@ -10,6 +10,8 @@ except PackageNotFoundError:
 
 __all__ = ["config", "database", "loader", "sgs"]
 
+# Library import must not have side effects: attach only a NullHandler and
+# let the caller configure handlers. The CLI configures file/rich logging in
+# ``cli.main()`` (via ``config.setup_logging``); non-CLI users configure their
+# own logging.
 logging.getLogger(__name__).addHandler(logging.NullHandler())
-
-config.setup_logging(__name__, "bcb-sgs-sql.log")

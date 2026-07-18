@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 _FREQ_ACRONYM = {
     "diária": "D",
     "diario": "D",
-    "diária ": "D",
     "semanal": "S",
     "mensal": "M",
     "trimestral": "T",
@@ -104,6 +103,10 @@ def basic_to_metadata_row(
     """Map a ``SeriesMetadataBasic`` dict (+ full) to a catalog row."""
     row: dict = {
         "series_id": int(basic["series_id"]),
+        # ``name_index`` (the catalog "índice" name) has no distinct source in
+        # the basic-metadata payload — only the catalog listing (GrupoSeriesRow)
+        # carries it, and that path does not feed this loader — so it mirrors
+        # ``name`` here. Kept populated for downstream consumers of the column.
         "name_index": basic.get("name"),
         "name": basic.get("name"),
         "name_abbreviated": basic.get("name_abbreviated"),
