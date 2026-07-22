@@ -53,7 +53,6 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   versionamento de revisões, uso, formato TOML, fluxo de dados).
 - Teste de regressão do código de saída de `run`/`transform`.
 
-### Notas
-
-- A dependência de `bcb-sgs-fetcher` continua via `git+https@v0.4.0` até o fetcher ser
-  publicado no PyPI; então deve virar `bcb-sgs-fetcher>=0.5.0` (ver TODO no `pyproject.toml`).
+> **Nota:** a dependência de `bcb-sgs-fetcher` continua via `git+https@v0.4.0` até o
+> fetcher ser publicado no PyPI; então deve virar `bcb-sgs-fetcher>=0.5.0` (ver TODO no
+> `pyproject.toml`).
