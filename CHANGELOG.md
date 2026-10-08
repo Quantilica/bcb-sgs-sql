@@ -7,9 +7,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [0.2.2] - 2026-10-08
+
 ### Alterado
 
 - Piso de `bcb-sgs-fetcher` elevado para `>=0.9.2`.
+- Publicação migrada para GitHub Releases + índice `index.quantilica.com`
+  (Fluxo B); as versões anteriores no PyPI permanecem congeladas.
 
 ## [0.2.1] - 2026-07-18
 
