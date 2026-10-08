@@ -117,14 +117,14 @@ Assim o histórico completo de revisões é preservado sem tabela de auditoria s
 ## Instalação
 
 ```bash
-pip install bcb-sgs-sql
+# Via CLI unificada (recomendado)
+quantilica install bcb-sgs-sql
+
+# Ou como biblioteca no seu projeto
+uv add bcb-sgs-sql --index https://index.quantilica.com/simple/
 ```
 
-Com [uv](https://github.com/astral-sh/uv):
-
-```bash
-uv add bcb-sgs-sql
-```
+> **Nota:** Versões anteriores a 0.2.2 permanecem no PyPI, congeladas; a partir de 0.2.2 a distribuição é feita exclusivamente pelo índice Quantilica.
 
 ---
 

@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Alterado
+
+- Instalação documentada via índice Quantilica (Fluxo B): `quantilica install bcb-sgs-sql` / `uv add bcb-sgs-sql --index https://index.quantilica.com/simple/`; versões anteriores a 0.2.2 no PyPI permanecem congeladas.
+
 ## [0.2.2] - 2026-10-08
 
 ### Alterado
