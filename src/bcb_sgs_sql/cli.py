@@ -42,6 +42,11 @@ def _print_header() -> None:
             (f"  v{__version__}", "dim"),
             "\n",
             ("Séries temporais do BCB SGS", "dim"),
+            "\n\n",
+            (
+                "[AVISO: Pacote depreciado. Migrado para 'quantilica-sql']",
+                "bold yellow",
+            ),
         )
     )
     console.print(Panel(content, border_style="cyan dim", padding=(0, 0)))

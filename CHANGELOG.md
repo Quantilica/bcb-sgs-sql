@@ -7,6 +7,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Depreciado
+
+- Pacote descontinuado e consolidado no motor unificado `quantilica-sql` (classificador PyPI atualizado para `Development Status :: 7 - Inactive`). Catálogo de pipelines migrado para `quantilica-pipelines`.
+
+
 ### Alterado
 
 - Instalação documentada via índice Quantilica (Fluxo B): `quantilica install bcb-sgs-sql` / `uv add bcb-sgs-sql --index https://index.quantilica.com/simple/`; versões anteriores a 0.2.2 no PyPI permanecem congeladas.

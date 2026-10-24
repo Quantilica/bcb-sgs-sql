@@ -1,7 +1,7 @@
 [project]
 name = "bcb-sgs-sql"
 version = "0.2.2"
-description = "Séries temporais do BCB SGS em PostgreSQL"
+description = "Séries temporais do BCB SGS em PostgreSQL (DEPRECADO: use quantilica-sql)"
 readme = "README.md"
 authors = [
     { name = "Komesu, D.K.", email = "daniel@dkko.me" },
@@ -19,7 +19,7 @@ keywords = [
     "etl",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 7 - Inactive",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",

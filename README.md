@@ -1,5 +1,17 @@
 # bcb-sgs-sql: Séries temporais do BCB SGS em PostgreSQL
 
+> [!WARNING]
+> **PACOTE DEPRECIADO / DEPRECATED**  
+> O pacote `bcb-sgs-sql` foi descontinuado e consolidado no motor unificado [**`quantilica-sql`**](https://github.com/Quantilica/quantilica-sql).  
+> Para novas instalações e execução de pipelines no PostgreSQL, DuckDB ou SQLite, utilize:
+> ```bash
+> quantilica install sql
+> # ou
+> uv add quantilica-sql --index https://index.quantilica.com/simple/
+> ```
+> O catálogo de definições e transformações analíticas agora reside em [**`quantilica-pipelines`**](https://github.com/Quantilica/quantilica-pipelines).
+
+
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square) ![Python](https://img.shields.io/badge/python-3.12+-blue.svg?style=flat-square) ![PostgreSQL](https://img.shields.io/badge/postgresql-%E2%89%A515-blue.svg?style=flat-square)
 
 **Motor ETL que baixa, normaliza e carrega séries do [BCB SGS](https://www3.bcb.gov.br/sgspub/) (Sistema Gerenciador de Séries Temporais) em PostgreSQL, com histórico de revisões preservado.**
