@@ -1,7 +1,15 @@
 import logging
+import warnings
 from importlib.metadata import PackageNotFoundError, version
 
 from . import config, database, loader, sgs
+
+warnings.warn(
+    "O pacote 'bcb-sgs-sql' foi consolidado no motor unificado 'quantilica-sql'. "
+    "Consulte 'quantilica-sql' para a execução de pipelines no PostgreSQL.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 try:
     __version__ = version("bcb-sgs-sql")
